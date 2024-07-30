@@ -25,31 +25,30 @@ void testpoint(double, double);
 int numoutside = 0;
 
 int main(){
-   int i, j;
-   double area, error, eps  = 1.0e-5;
-   double cimag, creal;
+  int i;
+  double area, error, eps  = 1.0e-5;
 
 
-//   Loop over grid of points in the complex plane which contains the Mandelbrot set,
-//   testing each point to see whether it is inside or outside the set.
+  //   Loop over grid of points in the complex plane which contains the Mandelbrot set,
+  //   testing each point to see whether it is inside or outside the set.
 
-#pragma omp parallel for private(eps)
-   for (i=0; i<NPOINTS; i++) {
-     for (j=0; j<NPOINTS; j++) {
-       creal = -2.0+2.5*(double)(i)/(double)(NPOINTS)+eps;
-       cimag = 1.125*(double)(j)/(double)(NPOINTS)+eps;
-       testpoint(creal, cimag);
-     }
-   }
+  #pragma omp parallel for
+    for (i=0; i<NPOINTS; i++) {
+      for (int j=0; j<NPOINTS; j++) {
+        double cimag, creal;
+        creal = -2.0+2.5*(double)(i)/(double)(NPOINTS)+eps;
+        cimag = 1.125*(double)(j)/(double)(NPOINTS)+eps;
+        testpoint(creal, cimag);
+      }
+    }
 
-// Calculate area of set and error estimate and output the results
+    // Calculate area of set and error estimate and output the results
    
-area=2.0*2.5*1.125*(double)(NPOINTS*NPOINTS-numoutside)/(double)(NPOINTS*NPOINTS);
-   error=area/(double)NPOINTS;
+  area=2.0*2.5*1.125*(double)(NPOINTS*NPOINTS-numoutside)/(double)(NPOINTS*NPOINTS);
+  error=area/(double)NPOINTS;
 
-   printf("Area of Mandlebrot set = %12.8f +/- %12.8f\n",area,error);
-   printf("Correct answer should be around 1.510659\n");
-
+  printf("Area of Mandlebrot set = %12.8f +/- %12.8f\n",area,error);
+  printf("Correct answer should be around 1.510659\n");
 }
 
 void testpoint(double creal, double cimag){
@@ -66,8 +65,9 @@ void testpoint(double creal, double cimag){
          zimag = zreal*zimag*2+cimag;
          zreal = temp;
          if ((zreal*zreal+zimag*zimag)>4.0) {
-           numoutside++;
-           break;
+          #pragma omp critical
+          numoutside++;
+          break;
          }
        }
 }
