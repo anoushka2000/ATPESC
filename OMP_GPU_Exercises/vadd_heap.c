@@ -22,6 +22,7 @@ int main()
     int err=0;
 
    // fill the arrays
+   #pragma omp parallel for
    for (int i=0; i<N; i++){
       a[i] = (float)i;
       b[i] = 2.0*(float)i;
@@ -30,11 +31,17 @@ int main()
    }
 
    // add two vectors
+   #pragma omp target map(to:a[0:N], b[0:N]) // , map(tofrom:c[0:N])
+   // map: creates as association between an object on the device
+   // and object on the host
+   // integrated memory => no actual movement required
+   #pragma omp loop
    for (int i=0; i<N; i++){
       c[i] = a[i] + b[i];
    }
 
    // test results
+   #pragma omp parallel for reduction(+:err)
    for(int i=0;i<N;i++){
       float val = c[i] - res[i];
       val = val*val;

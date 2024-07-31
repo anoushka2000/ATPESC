@@ -26,8 +26,6 @@
 #define FS 30
 #endif
 
-static int MAX_INT = 10000;
-
 // definition of a node in the list
 struct node {
    int data;
@@ -88,35 +86,33 @@ int main(int argc, char *argv[]) {
    printf("We will compute fibonacci numbers starting at %d\n",FS);
  
    p = init_list(p);
-   head = p;
-
-   // traverse the list process work for each node
    start = omp_get_wtime();
-   #pragma omp parallel for schedule(static, 1)
-   for (int i=0; i<MAX_INT; i++) {
-      processwork(p);
-      // #pragma omp critical
-      p = p->next;
-      if (p == NULL) {
-         break;
+
+   #pragma omp parallel
+   {
+      #pragma omp single 
+      {
+         head = p;
+         // traverse the list process work for each node
+         while (p != NULL) {
+            #pragma omp task firstprivate(p) // parallel linked list traversal
+               processwork(p);
+            p = p->next;
+         }
       }
-      // #pragma omp flush(p)
    }
+   
    end = omp_get_wtime();
 
    // traverse the list releasing memory allocated for the list
-   // p = head;
-   // #pragma omp parallel for
-   // for (int i=0; i<MAX_INT; i++) {
-   //    printf("%d : %d\n",p->data, p->fibdata);
-   //    temp = p->next;
-   //    free (p);
-   //    p = temp;
-   //    if (p == NULL) {
-   //       break;
-   //    }
-   // }  
-   // free (p);
+   p = head;
+   while (p != NULL) {
+      printf("%d : %d\n",p->data, p->fibdata);
+      temp = p->next;
+      free (p);
+      p = temp;
+   }  
+   free (p);
    printf("Compute Time: %f seconds\n", end - start);
    return 0;
 }

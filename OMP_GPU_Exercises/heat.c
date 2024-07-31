@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
 
   // Start the solve timer
   double tic = omp_get_wtime();
+  #pragma omp target enter data map(to: u[0:n*n], u_tmp[0:n*n]) 
   for (int t = 0; t < nsteps; ++t) {
 
     // Call the solve kernel
@@ -142,6 +143,7 @@ int main(int argc, char *argv[]) {
     u = u_tmp;
     u_tmp = tmp;
   }
+  #pragma omp target exit data map(from: u[0:n*n])
   // Stop solve timer
   double toc = omp_get_wtime();
 
@@ -205,6 +207,8 @@ void solve(const int n, const double alpha, const double dx, const double dt, co
 
   // Loop over the nxn grid
 #ifdef ALT
+  #pragma omp target
+  #pragma omp loop collapse(2) 
   for (int i = 1; i < n-1; ++i) {
     for (int j = 1; j < n-1; ++j) {
 
@@ -217,14 +221,10 @@ void solve(const int n, const double alpha, const double dx, const double dt, co
       r * (u[i+(j-1)*n] );
     }
   }
-//  for(int i=0; i<n; ++i){
-//     u_tmp[i]=0.0;
-//     u_tmp[i+n*(n-1)]=0.0;
-//     u_tmp[n+i*n ]=0.0;
-//     u_tmp[i*n ]=0.0;
-//  }
 
 #else
+  #pragma omp target
+  #pragma omp loop collapse(2)
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
 
